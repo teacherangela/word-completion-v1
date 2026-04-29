@@ -20,7 +20,7 @@
         body { 
             margin: 0; padding: 0; font-family: 'Fredoka', sans-serif; 
             background: var(--bg-main); color: var(--text-dark); 
-            overflow: hidden; touch-action: none; 
+            overflow: hidden; 
             -webkit-user-select: none; user-select: none;
             width: 100vw; height: 100vh;
         }
@@ -104,8 +104,30 @@
             -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid white;
         }
 
-        #settings-modal { display: none; position: fixed; z-index: 6000; inset: 0; background: rgba(227, 242, 253, 0.95); overflow-y: auto; padding: 20px; }
-        .modal-content { background: #ffffff; color: var(--text-dark); margin: auto; padding: 30px; border-radius: 20px; max-width: 850px; position: relative; font-family: 'Fredoka', sans-serif; box-shadow: var(--shadow); }
+        /* Fixed Settings Modal for iPad Scroll */
+        #settings-modal { 
+            display: none; 
+            position: fixed; 
+            z-index: 6000; 
+            inset: 0; 
+            background: rgba(227, 242, 253, 0.95); 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; 
+            padding: 20px; 
+            touch-action: pan-y; 
+        }
+        .modal-content { 
+            background: #ffffff; 
+            color: var(--text-dark); 
+            margin: 20px auto; 
+            padding: 30px; 
+            border-radius: 20px; 
+            max-width: 850px; 
+            position: relative; 
+            font-family: 'Fredoka', sans-serif; 
+            box-shadow: var(--shadow); 
+            pointer-events: auto;
+        }
         
         .close-x {
             position: absolute; top: 15px; right: 20px; font-size: 30px; font-weight: bold;
@@ -311,7 +333,14 @@
             toggleSharedPace(false);
             setupPasteDetection();
             renderSentenceBank();
-            document.addEventListener('touchmove', e => { if (e.target.tagName !== 'INPUT') e.preventDefault(); }, { passive: false });
+            
+            // Fixed Touch Handling for Scrolling
+            document.addEventListener('touchmove', e => { 
+                // Only prevent default if we are specifically in the game boundary or dragging
+                if (document.getElementById('game-screen').style.display === 'flex' && !document.getElementById('settings-modal').contains(e.target)) {
+                    e.preventDefault(); 
+                }
+            }, { passive: false });
         };
 
         function toggleSharedPace(val) {
@@ -471,9 +500,13 @@
             baseTimer = parseInt(document.getElementById('timer-input').value) || 60;
             renderSentenceBank(); setPlayers(playerCount); setSpeed(gameSpeedLevel);
             document.getElementById('settings-modal').style.display = 'block';
+            document.body.style.overflow = 'auto'; // Temporarily allow overflow for scrolling modal
         }
 
-        function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+        function closeSettings() { 
+            document.getElementById('settings-modal').style.display = 'none'; 
+            document.body.style.overflow = 'hidden'; 
+        }
 
         function applySettingsOnly() {
             baseTimer = parseInt(document.getElementById('timer-input').value) || 60;
@@ -710,7 +743,7 @@
             timerInterval = setInterval(() => {
                 globalTimer--;
                 for(let i=0; i<playerCount; i++) { 
-                    const el = document.getElementById(`time-${i}`);
+                    const el = document.getElementById('time-' + i);
                     if(el) el.innerText = globalTimer + "s";
                 }
                 if(globalTimer <= 0) endGame();
@@ -765,6 +798,13 @@
                 } catch(err) { alert("Invalid File"); }
             };
             reader.readAsText(file);
+        }
+
+        function resetToDefaults() {
+            if(confirm("Reset all settings to default?")) {
+                localStorage.clear();
+                location.reload();
+            }
         }
     </script>
 </body>
